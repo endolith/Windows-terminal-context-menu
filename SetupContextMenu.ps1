@@ -62,6 +62,7 @@ if($uninstall) {
 Write-Output "Copy icons => $resourcePath"
 
 # Load the custom config
+$config = $null
 if((Test-Path -Path $customConfigPath)) {
     $rawConfig = (Get-Content $customConfigPath -Encoding UTF8) -replace '^\s*\/\/.*' | Out-String
     $config = (ConvertFrom-Json -InputObject $rawConfig)
