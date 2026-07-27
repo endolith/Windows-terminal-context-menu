@@ -3,7 +3,8 @@ Param(
 )
 
 # Global definitions
-$wtProfilesPath = "$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
+$wtPackagePath = Get-ChildItem "$env:LocalAppData\Packages\Microsoft.WindowsTerminal*" | Select-Object -ExpandProperty FullName -First 1
+$wtProfilesPath = "$wtPackagePath\LocalState\settings.json"
 $customConfigPath = "$PSScriptRoot\config.json"
 $resourcePath = "$env:LOCALAPPDATA\WindowsTerminalContextIcons\"
 $contextMenuIcoName = "terminal.ico"
