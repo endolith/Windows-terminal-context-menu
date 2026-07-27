@@ -1,4 +1,4 @@
-Param(
+﻿Param(
     [bool]$uninstall=$false
 )
 
@@ -10,6 +10,7 @@ $resourcePath = "$env:LOCALAPPDATA\WindowsTerminalContextIcons\"
 $contextMenuIcoName = "terminal.ico"
 $cmdIcoFileName = "cmd.ico"
 $wslIcoFileName = "linux.ico"
+$ubuntuIcoFileName = "ubuntu.ico"
 $psIcoFileName = "powershell.ico"
 $psCoreIcoFileName = "powershell-core.ico"
 $azureCoreIcoFileName = "azure.ico"
@@ -208,7 +209,10 @@ $profiles | ForEach-Object {
         elseif (($commandLine -match "powershell\.exe(?:\s|$)")) {
             $icoPath = "$psIcoFileName"
         }
-        elseif ($source -eq "Windows.Terminal.Wsl") {
+        elseif ($source -match "(?i)ubuntu" -or $_.name -match "(?i)ubuntu") {
+            $icoPath = "$ubuntuIcoFileName"
+        }
+        elseif ($source -match "(?i)wsl") {
             $icoPath = "$wslIcoFileName"
         }
         elseif ($source -eq "Windows.Terminal.PowershellCore") {
