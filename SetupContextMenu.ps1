@@ -14,6 +14,44 @@ $psCoreIcoFileName = "powershell-core.ico"
 $azureCoreIcoFileName = "azure.ico"
 $unknownIcoFileName = "unknown.ico"
 $gitBashIcoFileName = "git-bash.ico"
+
+# Emoji rendering: convert emoji character to .ico file
+function Convert-EmojiToIcon {
+    param([string]$Emoji, [string]$OutputPath)
+    # Render emoji to ICO using System.Drawing (built into Windows, no deps)
+    Add-Type -AssemblyName System.Drawing 2>$null
+    $size = 32
+    $bmp = New-Object System.Drawing.Bitmap($size, $size)
+    $bmp.SetResolution(96, 96)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.Clear([System.Drawing.Color]::Transparent)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAlias
+    try { $font = New-Object System.Drawing.Font("Segoe UI Emoji", 20) } catch { $font = New-Object System.Drawing.Font("Segoe UI Symbol", 20) }
+    $fmt = [System.Drawing.StringFormat]::new()
+    $fmt.Alignment = [System.Drawing.StringAlignment]::Center
+    $fmt.LineAlignment = [System.Drawing.StringAlignment]::Center
+    $g.DrawString($Emoji, $font, [System.Drawing.Brushes]::White, [System.Drawing.RectangleF]::new(-1, -1, $size+2, $size+2), $fmt)
+    $g.Dispose()
+    # Save as PNG in memory, then wrap in ICO
+    $ms = [System.IO.MemoryStream]::new()
+    $bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png)
+    $pngBytes = $ms.ToArray()
+    $ms.Dispose()
+    $bmp.Dispose()
+    # Write ICO (ICO header + embedded PNG)
+    $fs = [System.IO.File]::OpenWrite($OutputPath)
+    $writer = [System.IO.BinaryWriter]::new($fs)
+    $writer.Write([byte[]]@(0,0,1,0,1,0))
+    $writer.Write([byte]32); $writer.Write([byte]32)
+    $writer.Write([byte]0); $writer.Write([byte]0)
+    $writer.Write([uint16]1); $writer.Write([uint16]32)
+    $writer.Write([uint32]$pngBytes.Length); $writer.Write([uint32]22)
+    $writer.Write($pngBytes)
+    $writer.Dispose()
+    $fs.Dispose()
+}
+
 $menuRegID = "WindowsTerminal"
 $contextMenuLabel = "Open Windows Terminal here"
 $contextMenuRegPath = "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\$menuRegID"
@@ -174,6 +212,17 @@ $profiles | ForEach-Object {
             # Unhandled Icon
             $icoPath = "$unknownIcoFileName"
             Write-Host "No icon found, using unknown.ico instead"
+        }
+
+        # If icon is non-file (emoji, etc.), render it to an .ico file
+        if ($icoPath -and $icoPath -notmatch '^[a-zA-Z]:\\|\.(?:ico|exe|dll|png|bmp)$') {
+            $emojiHash = [System.BitConverter]::ToString([System.Text.Encoding]::UTF8.GetBytes($icoPath)).Replace("-", "")
+            $emojiIcoPath = "$resourcePath" + "emoji-$emojiHash.ico"
+            if (-not (Test-Path $emojiIcoPath)) {
+                Write-Host "Rendering emoji icon $icoPath to $emojiIcoPath"
+                Convert-EmojiToIcon -Emoji $icoPath -OutputPath $emojiIcoPath
+            }
+            $icoPath = $emojiIcoPath
         }
 
         if($icoPath -ne "") {
