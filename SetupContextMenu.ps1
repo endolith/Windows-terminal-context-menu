@@ -13,6 +13,7 @@ $psIcoFileName = "powershell.ico"
 $psCoreIcoFileName = "powershell-core.ico"
 $azureCoreIcoFileName = "azure.ico"
 $unknownIcoFileName = "unknown.ico"
+$gitBashIcoFileName = "git-bash.ico"
 $menuRegID = "WindowsTerminal"
 $contextMenuLabel = "Open Windows Terminal here"
 $contextMenuRegPath = "Registry::HKEY_CURRENT_USER\SOFTWARE\Classes\Directory\shell\$menuRegID"
@@ -152,10 +153,10 @@ $profiles | ForEach-Object {
         elseif ($_.icon) {
             $icoPath = $_.icon
         }
-        elseif(($commandLine -match "^cmd\.exe\s?.*")) {
+        elseif(($commandLine -match "cmd\.exe(?:\s|$)")) {
             $icoPath = "$cmdIcoFileName"
         }
-        elseif (($commandLine -match "^powershell\.exe\s?.*")) {
+        elseif (($commandLine -match "powershell\.exe(?:\s|$)")) {
             $icoPath = "$psIcoFileName"
         }
         elseif ($source -eq "Windows.Terminal.Wsl") {
@@ -166,6 +167,9 @@ $profiles | ForEach-Object {
         }
         elseif ($source -eq "Windows.Terminal.Azure") {
             $icoPath = "$azureCoreIcoFileName"
+        }
+        elseif ($source -eq "Git") {
+            $icoPath = "$gitBashIcoFileName"
         }else{
             # Unhandled Icon
             $icoPath = "$unknownIcoFileName"
