@@ -19,7 +19,7 @@ $gitBashIcoFileName = "git-bash.ico"
 
 # Emoji rendering: convert emoji character to .ico file
 function Convert-EmojiToIcon {
-    param([string]$Emoji, [string]$OutputPath)
+    param([string]$Emoji, [string]$OutputPath, [string]$Theme = "dark")
     # Render emoji to ICO using System.Drawing (built into Windows, no deps)
     Add-Type -AssemblyName System.Drawing 2>$null
     $bmp = $null; $g = $null; $ms = $null; $fs = $null; $writer = $null
@@ -35,7 +35,8 @@ function Convert-EmojiToIcon {
         $fmt = [System.Drawing.StringFormat]::new()
         $fmt.Alignment = [System.Drawing.StringAlignment]::Center
         $fmt.LineAlignment = [System.Drawing.StringAlignment]::Center
-        $g.DrawString($Emoji, $font, [System.Drawing.Brushes]::White, [System.Drawing.RectangleF]::new(-1, -1, $size+2, $size+2), $fmt)
+        if ($Theme -eq "dark") { $color = [System.Drawing.Brushes]::White } else { $color = [System.Drawing.Brushes]::Black }
+    $g.DrawString($Emoji, $font, $color, [System.Drawing.RectangleF]::new(-1, -1, $size+2, $size+2), $fmt)
         $g.Dispose(); $g = $null
         # Save as PNG in memory, then wrap in ICO
         $ms = [System.IO.MemoryStream]::new()
@@ -232,10 +233,14 @@ $profiles | ForEach-Object {
         # If icon is non-file (emoji, etc.), render it to an .ico file
         if ($icoPath -and $icoPath -notmatch '^[a-zA-Z]:\\|\.(?:ico|exe|dll|png|bmp)$') {
             $emojiHash = [System.BitConverter]::ToString([System.Text.Encoding]::UTF8.GetBytes($icoPath)).Replace("-", "")
-            $emojiIcoPath = "$resourcePath" + "emoji-$emojiHash.ico"
+            # Detect Windows theme: light or dark
+            $themeReg = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+            $lightTheme = (Get-ItemProperty -Path $themeReg -Name "AppsUseLightTheme" -ErrorAction SilentlyContinue).AppsUseLightTheme
+            $theme = if ($lightTheme -eq 0) { "dark" } else { "light" }
+            $emojiIcoPath = "$resourcePath" + "emoji-$emojiHash-$theme.ico"
             if (-not (Test-Path $emojiIcoPath)) {
                 Write-Host "Rendering emoji icon $icoPath to $emojiIcoPath"
-                Convert-EmojiToIcon -Emoji $icoPath -OutputPath $emojiIcoPath
+                Convert-EmojiToIcon -Emoji $icoPath -OutputPath $emojiIcoPath -Theme $theme
             }
             $icoPath = $emojiIcoPath
         }
